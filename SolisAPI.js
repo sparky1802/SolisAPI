@@ -1,5 +1,5 @@
-import {authMessage, digestMessage, keySign, messageToSign} from "./restAuth.js";
-import {addDay, sleep} from "./dateTime.js"
+import {authMessage, digestMessage, keySign, messageToSign} from "https://raw.githubusercontent.com/sparky1802/utilities/main/restAuth.js";
+import {addDay, sleep} from "https://raw.githubusercontent.com/sparky1802/utilities/main/dateTime.js"
 
 export {stationList, stationDetail, collectorList,collectorDetail, inverterList, inverterDetail, daily5min}
 
