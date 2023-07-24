@@ -141,7 +141,8 @@ async function daily5min(keyID, keySecret, startDate, endDate) {
         const deviceID = jsonList.data.page.records[index].id;
         const deviceMoney = jsonList.data.page.records[index].money;
         const deviceTimeZone = jsonList.data.page.records[index].timeZone;
-        let dayToReturn = startDate.toISOString().substring(0,10);
+        let dayToReturn = startDate.setTime(startDate.getTime() + deviceTimeZone * 60 * 60 * 1000);
+        dayToReturn = new Date(dayToReturn).toISOString().substring(0,10);        
         for(let index1 = 0; index1 <= daysQunatity; index1++) {
             const canonicalizedResources = "/v1/api/stationDay";
             const content = `{"id":${deviceID}, "money":"${deviceMoney}", "time":"${dayToReturn}", "timeZone":${deviceTimeZone}}`;
