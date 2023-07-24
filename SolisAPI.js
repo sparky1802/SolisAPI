@@ -1,4 +1,4 @@
-import {authMessage, digestMessage, keySign, messageToSign} from "./auth.js";
+import {authMessage, digestMessage, keySign, messageToSign} from "./restAuth.js";
 import {addDay, sleep} from "./dateTime.js"
 
 export {stationList, stationDetail, collectorList,collectorDetail, inverterList, inverterDetail, daily5min}
