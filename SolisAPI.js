@@ -1,5 +1,5 @@
-import {authMessage, digestMessage, keySign, messageToSign} from "https://raw.githubusercontent.com/sparky1802/utilities/main/restAuth.js";
-import {addDay, sleep} from "https://raw.githubusercontent.com/sparky1802/utilities/main/dateTime.js"
+import {authMessage, digestMessage, keySign, messageToSign} from "./restAuth.js";
+import {addDay, checkLeapYear, numOfDays, numOfMonths, numOfYears, sleep} from "./dateTime.js"
 
 export {stationList, stationDetail, collectorList,collectorDetail, inverterList, inverterDetail, daily5min}
 
@@ -132,22 +132,32 @@ async function inverterDetail(keyID, keySecret) {
 async function daily5min(keyID, keySecret, startDate, endDate) {
     const jsonList = JSON.parse(await stationList(keyID, keySecret));
     const deviceQuantity = jsonList.data.stationStatusVo.all;
-    startDate = new Date(startDate)
-    endDate = new Date(endDate)
-    const daysQunatity = (endDate - startDate) / (1000 * 60 * 60 * 24)
+
+    const numDays = numOfDays(startDate, endDate);
+    const numMonths = numOfMonths(startDate, endDate);
+    const numYears = numOfYears(startDate, endDate);
+
+
+    const daysQuanity = numOfDays(startDate, endDate);
     const infoArray = []
     const resultArray = []
     for (let index = 0; index < deviceQuantity; index++) {
         const deviceID = jsonList.data.page.records[index].id;
         const deviceMoney = jsonList.data.page.records[index].money;
         const deviceTimeZone = jsonList.data.page.records[index].timeZone;
-        let dayToReturn = startDate.setTime(startDate.getTime() + deviceTimeZone * 60 * 60 * 1000);
-        dayToReturn = new Date(dayToReturn).toISOString().substring(0,10);        
-        for(let index1 = 0; index1 <= daysQunatity; index1++) {
+        let dayToReturn = startDate;
+        for(let index1 = 0; index1 <= daysQuanity; index1++) {
+
+console.log(index1 + " day to return " + dayToReturn);
+
             const canonicalizedResources = "/v1/api/stationDay";
             const content = `{"id":${deviceID}, "money":"${deviceMoney}", "time":"${dayToReturn}", "timeZone":${deviceTimeZone}}`;
-            const details = await getDetails(canonicalizedResources, content, keyID, keySecret);
-            let nextDay = addDay(dayToReturn, 1, deviceTimeZone);
+            //const details = await getDetails(canonicalizedResources, content, keyID, keySecret);
+
+            const details = index1;
+
+            let nextDay = addDay(dayToReturn, 1);
+
             dayToReturn = nextDay;
             infoArray.push(details);
         };
