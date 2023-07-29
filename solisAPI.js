@@ -1,5 +1,5 @@
-import {authMessage, digestMessage, keySign, messageToSign} from "./restAuth.js";
-import {addDay, checkLeapYear, numOfDays, numOfMonths, numOfYears, sleep} from "./dateTime.js"
+import {authMessage, digestMessage, keySign, messageToSign} from "../utilities/restAuth.js";
+import {addDay, checkLeapYear, numOfDays, numOfMonths, numOfYears, sleep} from "../utilities/dateTime.js"
 
 export {stationList, stationDetail, collectorList,collectorDetail, inverterList, inverterDetail, daily5min}
 
@@ -146,19 +146,14 @@ async function daily5min(keyID, keySecret, startDate, endDate) {
         const deviceMoney = jsonList.data.page.records[index].money;
         const deviceTimeZone = jsonList.data.page.records[index].timeZone;
         let dayToReturn = startDate;
-        for(let index1 = 0; index1 <= daysQuanity; index1++) {
-
-console.log(index1 + " day to return " + dayToReturn);
-
+        let nextDay = ""
+        let sameDay = ""
+        for(let index1 = 0; index1 < daysQuanity; index1++) {
             const canonicalizedResources = "/v1/api/stationDay";
             const content = `{"id":${deviceID}, "money":"${deviceMoney}", "time":"${dayToReturn}", "timeZone":${deviceTimeZone}}`;
-            //const details = await getDetails(canonicalizedResources, content, keyID, keySecret);
-
-            const details = index1;
-
-            let nextDay = addDay(dayToReturn, 1);
-
-            dayToReturn = nextDay;
+            const details = await getDetails(canonicalizedResources, content, keyID, keySecret);
+            nextDay = addDay(dayToReturn, 1);
+            dayToReturn = nextDay    
             infoArray.push(details);
         };
         resultArray.push(infoArray);
