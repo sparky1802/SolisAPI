@@ -1,5 +1,23 @@
 {
   "version": "3",
+  "packages": {
+    "specifiers": {
+      "jsr:@std/crypto@^1.0.0": "jsr:@std/crypto@1.0.0",
+      "jsr:@std/encoding@^1.0.0": "jsr:@std/encoding@1.0.0",
+      "jsr:@std/fs@^0.229.3": "jsr:@std/fs@0.229.3"
+    },
+    "jsr": {
+      "@std/crypto@1.0.0": {
+        "integrity": "9604ee69022cbf59e5a5981a2786ab34324a8e7b8a0b8b0d66ac999f658a233d"
+      },
+      "@std/encoding@1.0.0": {
+        "integrity": "3cabf87b3eadb69126b42998188c87155238ceef805af3f241acca00ddb0cbb2"
+      },
+      "@std/fs@0.229.3": {
+        "integrity": "783bca21f24da92e04c3893c9e79653227ab016c48e96b3078377ebd5222e6eb"
+      }
+    }
+  },
   "remote": {
     "https://deno.land/std@0.193.0/_util/asserts.ts": "178dfc49a464aee693a7e285567b3d0b555dc805ff490505a8aae34f9cfb1462",
     "https://deno.land/std@0.193.0/crypto/_fnv/fnv32.ts": "e4649dfdefc5c987ed53c3c25db62db771a06d9d1b9c36d2b5cf0853b8e82153",
@@ -16,5 +34,12 @@
     "https://deno.land/std@0.193.0/encoding/base64.ts": "144ae6234c1fbe5b68666c711dc15b1e9ee2aef6d42b3b4345bf9a6c91d70d0d",
     "https://deno.land/std@0.193.0/encoding/base64url.ts": "2ed4ba122b20fedf226c5d337cf22ee2024fa73a8f85d915d442af7e9ce1fae1",
     "https://deno.land/std@0.193.0/encoding/hex.ts": "b4b1a7cb678745b0bf181ed8cf2498c7be00d121a7de244b752fbf9c7d9c48cd"
+  },
+  "workspace": {
+    "dependencies": [
+      "jsr:@std/crypto@^1.0.0",
+      "jsr:@std/encoding@^1.0.0",
+      "jsr:@std/fs@^0.229.3"
+    ]
   }
 }

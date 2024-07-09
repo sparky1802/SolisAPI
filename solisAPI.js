@@ -4,6 +4,7 @@ import {
 	keySign,
 	messageToSign,
 } from './restAuth.js';
+import { checkFileStatus } from './utilities.js';
 import { addDay, numOfDays, sleep } from './dateTime.js';
 
 export {
@@ -13,7 +14,7 @@ export {
 	inverterDetail,
 	inverterList,
 	stationDetail,
-	stationList,
+	userStationList,
 };
 
 const CONTENT_HASH = 'MD5';
@@ -26,7 +27,7 @@ const SIGN_FORMAT = 'raw';
 const SIGN_HASH = 'SHA-1';
 
 //CREATE THE API REQUEST TO POST AND FETCH THE DATA IN JSON.STRINGIFY FORMAT
-async function getDetails(CANONICALIZED_RESOURCE, CONTENT, keyID, keySecret) {
+async function getDetails(CANONICALIZED_RESOURCE, CONTENT, KEY_ID, KEY_SECRET) {
 	//Create the API request to post
 	const CONTENT_MD5 = await digestMessage(CONTENT_HASH, CONTENT);
 	const MESSAGE = await messageToSign(
@@ -37,13 +38,13 @@ async function getDetails(CANONICALIZED_RESOURCE, CONTENT, keyID, keySecret) {
 		CANONICALIZED_RESOURCE,
 	);
 	const SIGN_KEY = await keySign(
-		keySecret,
+		KEY_SECRET,
 		SIGN_FORMAT,
 		SIGN_ALGORITHM,
 		SIGN_HASH,
 	);
 	const AUTH_KEY = await authMessage(SIGN_ALGORITHM, SIGN_KEY, MESSAGE);
-	const AUTHORIZATION = `API ${keyID}:${AUTH_KEY}`;
+	const AUTHORIZATION = `API ${KEY_ID}:${AUTH_KEY}`;
 	const REQUEST_OPTIONS = {
 		method: HTTP_VERB,
 		url: HOST_ID + CANONICALIZED_RESOURCE,
@@ -74,21 +75,28 @@ async function getDetails(CANONICALIZED_RESOURCE, CONTENT, keyID, keySecret) {
 }
 
 //POWER STATION LIST (ALL)
-async function stationList(keyID, keySecret) {
-	const CANONICALIZED_RESOURCE = '/v1/api/userStationList';
-	const CONTENT = `{"pageNo":1,"pageSize":20}`;
-	const DETAILS = await getDetails(
-		CANONICALIZED_RESOURCE,
-		CONTENT,
-		keyID,
-		keySecret,
-	);
-	return JSON.parse(DETAILS);
+async function userStationList(KEY_ID, KEY_SECRET) {
+	const FILE_STATUS = await checkFileStatus()
+	if ((FILE_STATUS.exist === true || FILE_STATUS.exist === false) && FILE_STATUS.stale === true) {
+		const CANONICALIZED_RESOURCE = '/v1/api/userStationList';
+		const CONTENT = `{"pageNo":1,"pageSize":20}`;
+		const DETAILS = await getDetails(
+			CANONICALIZED_RESOURCE,
+			CONTENT,
+			KEY_ID,
+			KEY_SECRET,
+		);
+		Deno.writeTextFile("./cache/userStationList.json", DETAILS)
+		return JSON.parse(DETAILS);	
+	} else {
+		const DETAILS = await Deno.readTextFile("./cache/userStationList.json")
+		return JSON.parse(DETAILS)
+	}
 }
 
 //POWER DETAIL (INDIVIDUAL)
-async function stationDetail(keyID, keySecret) {
-	const JSON_LIST = await stationList(keyID, keySecret);
+async function stationDetail(KEY_ID, KEY_SECRET) {
+	const JSON_LIST = await userStationList(KEY_ID, KEY_SECRET);
 	const DEVICE_QUANTITY = JSON_LIST.data.page.total;
 	const RESULT_ARRAY = [];
 	for (let index = 0; index < DEVICE_QUANTITY; index++) {
@@ -98,8 +106,8 @@ async function stationDetail(keyID, keySecret) {
 		const DETAILS = await getDetails(
 			CANONICALIZED_RESOURCE,
 			CONTENT,
-			keyID,
-			keySecret,
+			KEY_ID,
+			KEY_SECRET,
 		);
 		RESULT_ARRAY.push(JSON.parse(DETAILS));
 	}
@@ -107,8 +115,8 @@ async function stationDetail(keyID, keySecret) {
 }
 
 //COLLECTOR / DATALOGGER LIST (ALL)
-async function collectorList(keyID, keySecret) {
-	const JSON_LIST = await stationList(keyID, keySecret);
+async function collectorList(KEY_ID, KEY_SECRET) {
+	const JSON_LIST = await userStationList(KEY_ID, KEY_SECRET);
 	const DEVICE_QUANTITY = JSON_LIST.data.page.total;
 	const RESULT_ARRAY = [];
 	for (let index = 0; index < DEVICE_QUANTITY; index++) {
@@ -117,8 +125,8 @@ async function collectorList(keyID, keySecret) {
 		const DETAILS = await getDetails(
 			CANONICALIZED_RESOURCE,
 			CONTENT,
-			keyID,
-			keySecret,
+			KEY_ID,
+			KEY_SECRET,
 		);
 		RESULT_ARRAY.push(JSON.parse(DETAILS));
 	}
@@ -126,8 +134,8 @@ async function collectorList(keyID, keySecret) {
 }
 
 //COLLECTOR / DATALOGGER DETAIL (INDIVIDUAL)
-async function collectorDetail(keyID, keySecret) {
-	const JSON_LIST = await collectorList(keyID, keySecret);
+async function collectorDetail(KEY_ID, KEY_SECRET) {
+	const JSON_LIST = await collectorList(KEY_ID, KEY_SECRET);
 	const DEVICE_QUANTITY = JSON_LIST[0].data.page.total;
 	const RESULT_ARRAY = [];
   for (let index = 0; index < DEVICE_QUANTITY; index++) {
@@ -138,8 +146,8 @@ async function collectorDetail(keyID, keySecret) {
 		const DETAILS = await getDetails(
 			CANONICALIZED_RESOURCE,
 			CONTENT,
-			keyID,
-			keySecret,
+			KEY_ID,
+			KEY_SECRET,
 		);
 		RESULT_ARRAY.push(JSON.parse(DETAILS));
 	}
@@ -147,8 +155,8 @@ async function collectorDetail(keyID, keySecret) {
 }
 
 //INVERTER LIST (ALL)
-async function inverterList(keyID, keySecret) {
-	const JSON_LIST = await stationList(keyID, keySecret);
+async function inverterList(KEY_ID, KEY_SECRET) {
+	const JSON_LIST = await userStationList(KEY_ID, KEY_SECRET);
 	const DEVICE_QUANTITY = JSON_LIST.data.page.total;
 	const RESULT_ARRAY = [];
 	for (let index = 0; index < DEVICE_QUANTITY; index++) {
@@ -158,8 +166,8 @@ async function inverterList(keyID, keySecret) {
 		const DETAILS = await getDetails(
 			CANONICALIZED_RESOURCE,
 			CONTENT,
-			keyID,
-			keySecret,
+			KEY_ID,
+			KEY_SECRET,
 		);
 		RESULT_ARRAY.push(JSON.parse(DETAILS));
 	}
@@ -167,8 +175,8 @@ async function inverterList(keyID, keySecret) {
 }
 
 //INVERTER DETAIL (INDIVIDUAL)
-async function inverterDetail(keyID, keySecret) {
-	const JSON_LIST = await inverterList(keyID, keySecret);
+async function inverterDetail(KEY_ID, KEY_SECRET) {
+	const JSON_LIST = await inverterList(KEY_ID, KEY_SECRET);
 	const DEVICE_QUANTITY = JSON_LIST[0].data.page.total;
 	const RESULT_ARRAY = [];
 	for (let index = 0; index < DEVICE_QUANTITY; index++) {
@@ -178,8 +186,8 @@ async function inverterDetail(keyID, keySecret) {
 		const DETAILS = await getDetails(
 			CANONICALIZED_RESOURCE,
 			CONTENT,
-			keyID,
-			keySecret,
+			KEY_ID,
+			KEY_SECRET,
 		);
 		RESULT_ARRAY.push(JSON.parse(DETAILS));
 	}
@@ -187,8 +195,8 @@ async function inverterDetail(keyID, keySecret) {
 }
 
 //PLANT DAILY GRAPH
-async function daily5min(keyID, keySecret, startDate, endDate) {
-	const JSON_LIST = await stationList(keyID, keySecret);
+async function daily5min(KEY_ID, KEY_SECRET, startDate, endDate) {
+	const JSON_LIST = await userStationList(KEY_ID, KEY_SECRET);
 	const DEVICE_QUANTITY = JSON_LIST.data.stationStatusVo.all;
 	const DAYS_QUANTITY = numOfDays(startDate, endDate);
 	const INFO_ARRAY = [];
@@ -206,8 +214,8 @@ async function daily5min(keyID, keySecret, startDate, endDate) {
 			const DETAILS = await getDetails(
 				CANONICALIZED_RESOURCE,
 				CONTENT,
-				keyID,
-				keySecret,
+				KEY_ID,
+				KEY_SECRET,
 			);
 			nextDay = addDay(dayToReturn, 1);
 			dayToReturn = nextDay;

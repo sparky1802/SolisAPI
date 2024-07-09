@@ -37,5 +37,10 @@
 		"proseWrap": "always",
 		"include": ["./*"],
 		"exclude": ["src/testdata/"]
+	},
+	"imports": {
+		"@std/crypto": "jsr:@std/crypto@^1.0.0",
+		"@std/encoding": "jsr:@std/encoding@^1.0.0",
+		"@std/fs": "jsr:@std/fs@^0.229.3"
 	}
 }

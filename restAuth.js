@@ -1,5 +1,5 @@
-import { crypto } from 'https://deno.land/std@0.193.0/crypto/mod.ts';
-import { toHashString } from 'https://deno.land/std@0.193.0/crypto/to_hash_string.ts';
+import { crypto } from "@std/crypto"
+import { encodeBase64 } from "@std/encoding/base64"
 
 export { authMessage, digestMessage, keySign, messageToSign };
 
@@ -12,7 +12,7 @@ async function authMessage(SIGN_ALGORITHM, SIGN_KEY, MESSAGE) {
 		SIGN_KEY,
 		MESSAGE,
 	);
-	resAuth = toHashString(resAuth, 'base64');
+	resAuth = encodeBase64(resAuth, 'base64');
 	return resAuth;
 }
 
@@ -20,16 +20,16 @@ async function authMessage(SIGN_ALGORITHM, SIGN_KEY, MESSAGE) {
 async function digestMessage(CONTENT_HASH, CONTENT) {
 	let resCont = utf8Encoder.encode(CONTENT);
 	resCont = await crypto.subtle.digest(CONTENT_HASH, resCont);
-	resCont = toHashString(resCont, 'base64');
+	resCont = encodeBase64(resCont, 'base64');
 	return resCont;
 }
 
 //Create a key "keySign" used to sign "MESSAGE"
-async function keySign(keySecret, SIGN_FORMAT, SIGN_ALGORITHM, SIGN_HASH) {
-	keySecret = utf8Encoder.encode(keySecret);
+async function keySign(KEY_SECRET, SIGN_FORMAT, SIGN_ALGORITHM, SIGN_HASH) {
+	KEY_SECRET = utf8Encoder.encode(KEY_SECRET);
 	const resKeySec = await crypto.subtle.importKey(
 		SIGN_FORMAT,
-		keySecret,
+		KEY_SECRET,
 		{ name: SIGN_ALGORITHM, hash: SIGN_HASH },
 		false,
 		['sign', 'verify'],
@@ -40,13 +40,13 @@ async function keySign(keySecret, SIGN_FORMAT, SIGN_ALGORITHM, SIGN_HASH) {
 //Create a MESSAGE for Signing and encode as utf-8
 function messageToSign(
 	HTTP_VERB,
-	CONTENT_md5,
+	CONTENT_MD5,
 	CONTENT_TYPE,
 	GMT_DATE,
 	canonicalizedResources,
 ) {
 	let resMessage = HTTP_VERB + '\n' +
-		CONTENT_md5 + '\n' +
+		CONTENT_MD5 + '\n' +
 		CONTENT_TYPE + '\n' +
 		GMT_DATE + '\n' +
 		canonicalizedResources;
