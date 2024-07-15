@@ -8,12 +8,7 @@ import { checkFileStatus } from './utilities.js';
 import { addDay, numOfDays, sleep } from './dateTime.js';
 
 export {
-	collectorDetail,
-	collectorList,
-	daily5min,
-	inverterDetail,
-	inverterList,
-	stationDetail,
+	getData,
 	userStationList,
 };
 
@@ -57,7 +52,16 @@ async function getDetails(CANONICALIZED_RESOURCE, CONTENT, KEY_ID, KEY_SECRET) {
 		body: CONTENT,
 	};
 	//Fetch the data
-	const resultResponse = await fetch(
+	try {
+		const response = await fetch(HOST_ID + CANONICALIZED_RESOURCE+ '?' + AUTHORIZATION, REQUEST_OPTIONS);
+		const data = await response.json();
+		await sleep(1667); // If needed
+		return JSON.stringify(data);
+	  } catch (error) {
+		return error.toString();
+	  }
+/**	
+ 	const resultResponse = await fetch(
 		HOST_ID + CANONICALIZED_RESOURCE + '?' + AUTHORIZATION,
 		REQUEST_OPTIONS,
 	)
@@ -72,14 +76,15 @@ async function getDetails(CANONICALIZED_RESOURCE, CONTENT, KEY_ID, KEY_SECRET) {
 		});
 	await sleep(1667);
 	return resultResponse;
-}
+**/
+	}
 
-//POWER STATION LIST (ALL)
+//USER STATION LIST (ALL)
 async function userStationList(KEY_ID, KEY_SECRET) {
-	const FILE_STATUS = await checkFileStatus()
+	const FILE_STATUS = await checkFileStatus('./cache/userStationList.json')
 	if ((FILE_STATUS.exist === true || FILE_STATUS.exist === false) && FILE_STATUS.stale === true) {
 		const CANONICALIZED_RESOURCE = '/v1/api/userStationList';
-		const CONTENT = `{"pageNo":1,"pageSize":20}`;
+		const CONTENT = `{"pageNo":"1","pageSize":"20"}`;
 		const DETAILS = await getDetails(
 			CANONICALIZED_RESOURCE,
 			CONTENT,
@@ -90,118 +95,137 @@ async function userStationList(KEY_ID, KEY_SECRET) {
 		return JSON.parse(DETAILS);	
 	} else {
 		const DETAILS = await Deno.readTextFile("./cache/userStationList.json")
-		return JSON.parse(DETAILS)
+		return JSON.parse(DETAILS);
 	}
 }
 
-//POWER DETAIL (INDIVIDUAL)
-async function stationDetail(KEY_ID, KEY_SECRET) {
-	const JSON_LIST = await userStationList(KEY_ID, KEY_SECRET);
-	const DEVICE_QUANTITY = JSON_LIST.data.page.total;
+//GET THE DATA 
+async function getData(KEY_ID, KEY_SECRET, CANONICALIZED_RESOURCE, START_DATE, END_DATE) {
+	const JSON_INFO = await userStationList(KEY_ID, KEY_SECRET);
+	const UNIT_QUANTITY = JSON_INFO.data.page.total;
+	const CURRENCY = JSON_INFO.data.page.records[0].money;
+	const TIMEZONE = JSON_INFO.data.page.records[0].timeZone;
+	const DAYS_QUANTITY = numOfDays(START_DATE, END_DATE);
 	const RESULT_ARRAY = [];
-	for (let index = 0; index < DEVICE_QUANTITY; index++) {
-		const DEVICE_ID = JSON_LIST.data.page.records[index].id;
-		const CANONICALIZED_RESOURCE = '/v1/api/stationDetail';
-		const CONTENT = `{"id":${DEVICE_ID}}`;
-		const DETAILS = await getDetails(
-			CANONICALIZED_RESOURCE,
-			CONTENT,
-			KEY_ID,
-			KEY_SECRET,
+	let content;
+	let unitQuantity;
+	let jsonList;
+  
+	for (let iDev = 0; iDev < UNIT_QUANTITY; iDev++) {
+	  const UNIT_ID = JSON_INFO.data.page.records[iDev].id;
+  
+	  switch (CANONICALIZED_RESOURCE) {
+		case '/v1/api/alarmList':
+		case '/v1/api/collectorList':
+		case '/v1/api/inverterDetailList':
+		case '/v1/api/inverterList':
+		case '/v1/api/stationDetailList':
+		  content = `{"pageNo":"1","pageSize":"20"}`;
+		  unitQuantity = UNIT_QUANTITY;
+		  break;
+		case '/v1/api/collectorDetail':
+		case '/v1/api/collector/day':
+		  jsonList = await getData(KEY_ID, KEY_SECRET, '/v1/api/collectorList');
+		  unitQuantity = jsonList[0].data.page.total;
+		  break;
+		case '/v1/api/inverterAll':
+		case '/v1/api/inverterDay':
+		case '/v1/api/inverterDetail':
+		case '/v1/api/inverterMonth':
+		case '/v1/api/inverterYear':
+		case '/v1/api/inverter/shelfTime':
+		  jsonList = await getData(KEY_ID, KEY_SECRET, '/v1/api/inverterList');
+		  unitQuantity = jsonList[0].data.page.total;
+		  break;
+		case '/v1/api/stationDetail':
+		  content = `{"id":"${UNIT_ID}"}`;
+		  unitQuantity = UNIT_QUANTITY;
+		  break;
+		case '/v1/api/stationDayEnergyList':
+		case '/v1/api/stationMonthEnergyList':
+		case '/v1/api/stationYearEnergyList':
+		  content = `{"pageNo":"1", "pageSize":"20", "time":"${START_DATE}", "stationId":"${UNIT_ID}"}`;
+		  unitQuantity = UNIT_QUANTITY;
+		  break;
+		case '/v1/api/stationDay':
+		  content = `{"id":"${UNIT_ID}", "money":"${CURRENCY}", "time":"${START_DATE}", "timeZone":"${TIMEZONE}"}`;
+		  unitQuantity = UNIT_QUANTITY;
+		  break;
+		case '/v1/api/stationMonth':
+		  content = `{"id":"${UNIT_ID}", "money":"${CURRENCY}", "month":"${START_DATE.substr(0, START_DATE.length - 3)}", "timeZone":"${TIMEZONE}"}`;
+		  unitQuantity = UNIT_QUANTITY;
+		  break;
+		case '/v1/api/stationYear':
+		  content = `{"id":"${UNIT_ID}", "money":"${CURRENCY}", "year":"${START_DATE.substr(0, START_DATE.length - 6)}", "timeZone":"${TIMEZONE}"}`;
+		  unitQuantity = UNIT_QUANTITY;
+		  break;
+		case '/v1/api/stationAll':
+		  content = `{"id":"${UNIT_ID}", "money":"${CURRENCY}", "timeZone":"${TIMEZONE}"}`;
+		  unitQuantity = UNIT_QUANTITY;
+		  break;
+		default:
+		  throw new Error(`Unknown CANONICALIZED_RESOURCE: ${CANONICALIZED_RESOURCE}`);
+	  }
+  
+	  const detailPromises = [];
+	  for (let iUni = 0; iUni < unitQuantity; iUni++) {
+		let unitId, unitSn, unitTz;
+		if (unitQuantity > 1) {
+		  unitId = jsonList[0].data.page.records[iUni].id;
+		  unitSn = jsonList[0].data.page.records[iUni].sn;
+		  unitTz = jsonList[0].data.page.records[iUni].timeZone;
+		  switch (CANONICALIZED_RESOURCE) {
+			case '/v1/api/inverterDetail':
+			  content = `{"id":"${unitId}", "sn":"${unitSn}"}`;
+			  break;
+			case '/v1/api/inverterDay':
+			  content = `{"id":"${unitId}", "sn":"${unitSn}", "money":"${CURRENCY}", "time":"${START_DATE}", "timeZone":"${unitTz}"}`;
+			  break;
+			case '/v1/api/inverterMonth':
+			  content = `{"id":"${unitId}", "sn":"${unitSn}", "money":"${CURRENCY}", "month":"${START_DATE.substr(0, START_DATE.length - 3)}", "timeZone":"${unitTz}"}`;
+			  break;
+			case '/v1/api/inverterYear':
+			  content = `{"id":"${unitId}", "sn":"${unitSn}", "money":"${CURRENCY}", "year":"${START_DATE.substr(0, START_DATE.length - 6)}", "timeZone":"${unitTz}"}`;
+			  break;
+			case '/v1/api/inverterAll':
+			  content = `{"id":"${unitId}", "sn":"${unitSn}", "money":"${CURRENCY}"}`;
+			  break;
+			case '/v1/api/inverter/shelfTime':
+			  content = `{"pageNo":"1", "pageSize":"20", "sn":"${unitSn}"}`;
+			  break;
+			case '/v1/api/collectorDetail':
+			  content = `{"id":"${unitId}", "sn":"${unitSn}"}`;
+			  break;
+			case '/v1/api/collector/day':
+			  content = `{"sn":"${unitSn}", "time":"${START_DATE}", "timeZone":"${unitTz}"}`;
+			  break;
+			default:
+			  throw new Error(`Unknown CANONICALIZED_RESOURCE: ${CANONICALIZED_RESOURCE}`);
+		  }
+		}
+  
+		detailPromises.push(
+		  getDetails(CANONICALIZED_RESOURCE, content, KEY_ID, KEY_SECRET)
+			.then((DETAILS) => JSON.parse(DETAILS))
 		);
-		RESULT_ARRAY.push(JSON.parse(DETAILS));
+	  }
+	  const detailsResults = await Promise.all(detailPromises);
+	  RESULT_ARRAY.push(...detailsResults);
 	}
+  
 	return RESULT_ARRAY;
-}
+  }
 
-//COLLECTOR / DATALOGGER LIST (ALL)
-async function collectorList(KEY_ID, KEY_SECRET) {
-	const JSON_LIST = await userStationList(KEY_ID, KEY_SECRET);
-	const DEVICE_QUANTITY = JSON_LIST.data.page.total;
-	const RESULT_ARRAY = [];
-	for (let index = 0; index < DEVICE_QUANTITY; index++) {
-		const CANONICALIZED_RESOURCE = '/v1/api/collectorList';
-		const CONTENT = `{"pageNo":1,"pageSize":20}`;
-		const DETAILS = await getDetails(
-			CANONICALIZED_RESOURCE,
-			CONTENT,
-			KEY_ID,
-			KEY_SECRET,
-		);
-		RESULT_ARRAY.push(JSON.parse(DETAILS));
-	}
-	return RESULT_ARRAY;
-}
 
-//COLLECTOR / DATALOGGER DETAIL (INDIVIDUAL)
-async function collectorDetail(KEY_ID, KEY_SECRET) {
-	const JSON_LIST = await collectorList(KEY_ID, KEY_SECRET);
-	const DEVICE_QUANTITY = JSON_LIST[0].data.page.total;
-	const RESULT_ARRAY = [];
-  for (let index = 0; index < DEVICE_QUANTITY; index++) {
-    const DEVICE_ID = Number(JSON_LIST[0].data.page.records[index].id);
-		const DEVICE_SN = Number(JSON_LIST[0].data.page.records[index].sn);
-		const CANONICALIZED_RESOURCE = '/v1/api/collectorDetail';
-		const CONTENT = `{"id":${DEVICE_ID}, "sn":${DEVICE_SN}}`;
-		const DETAILS = await getDetails(
-			CANONICALIZED_RESOURCE,
-			CONTENT,
-			KEY_ID,
-			KEY_SECRET,
-		);
-		RESULT_ARRAY.push(JSON.parse(DETAILS));
-	}
-	return RESULT_ARRAY;
-}
-
-//INVERTER LIST (ALL)
-async function inverterList(KEY_ID, KEY_SECRET) {
-	const JSON_LIST = await userStationList(KEY_ID, KEY_SECRET);
-	const DEVICE_QUANTITY = JSON_LIST.data.page.total;
-	const RESULT_ARRAY = [];
-	for (let index = 0; index < DEVICE_QUANTITY; index++) {
-		const DEVICE_ID = Number(JSON_LIST.data.page.records[index].id);
-		const CANONICALIZED_RESOURCE = '/v1/api/inverterList';
-		const CONTENT = `{"pageNo":1,"pageSize":20, "id":${DEVICE_ID}}`;
-		const DETAILS = await getDetails(
-			CANONICALIZED_RESOURCE,
-			CONTENT,
-			KEY_ID,
-			KEY_SECRET,
-		);
-		RESULT_ARRAY.push(JSON.parse(DETAILS));
-	}
-	return RESULT_ARRAY;
-}
-
-//INVERTER DETAIL (INDIVIDUAL)
-async function inverterDetail(KEY_ID, KEY_SECRET) {
-	const JSON_LIST = await inverterList(KEY_ID, KEY_SECRET);
-	const DEVICE_QUANTITY = JSON_LIST[0].data.page.total;
-	const RESULT_ARRAY = [];
-	for (let index = 0; index < DEVICE_QUANTITY; index++) {
-		const DEVICE_ID = JSON_LIST[0].data.page.records[index].id;
-		const CANONICALIZED_RESOURCE = '/v1/api/inverterDetail';
-		const CONTENT = `{"id":${DEVICE_ID}}`;
-		const DETAILS = await getDetails(
-			CANONICALIZED_RESOURCE,
-			CONTENT,
-			KEY_ID,
-			KEY_SECRET,
-		);
-		RESULT_ARRAY.push(JSON.parse(DETAILS));
-	}
-	return RESULT_ARRAY;
-}
-
+/**
 //PLANT DAILY GRAPH
 async function daily5min(KEY_ID, KEY_SECRET, startDate, endDate) {
 	const JSON_LIST = await userStationList(KEY_ID, KEY_SECRET);
-	const DEVICE_QUANTITY = JSON_LIST.data.stationStatusVo.all;
+	const STATION_QUANTITY = JSON_LIST.data.stationStatusVo.all;
 	const DAYS_QUANTITY = numOfDays(startDate, endDate);
 	const INFO_ARRAY = [];
 	const RESULT_ARRAY = [];
-	for (let index = 0; index < DEVICE_QUANTITY; index++) {
+	for (let index = 0; index < STATION_QUANTITY; index++) {
 		const DEVICE_ID = JSON_LIST.data.page.records[index].id;
 		const DEVICE_MONEY = JSON_LIST.data.page.records[index].money;
 		const DEVICE_TIMEZONE = JSON_LIST.data.page.records[index].timeZone;
@@ -225,3 +249,5 @@ async function daily5min(KEY_ID, KEY_SECRET, startDate, endDate) {
 	}
 	return RESULT_ARRAY;
 }
+
+**/
