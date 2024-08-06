@@ -1,0 +1,53 @@
+{
+	"keyId": "",
+	"keySecret": "",
+	"stationId": "",
+	"timeZone": 0,
+	"money": "",
+	"inverter": {
+		"1": "/v1/api/inverterList",
+		"2": "/v1/api/inverterDetail",
+		"3": "13333/v1/api/inverterDetailList",
+		"4": "/v1/api/inverterDay",
+		"5": "/v1/api/inverterMonth",
+		"6": "/v1/api/inverterYear",
+		"7": "/v1/api/inverterAll",
+		"8": "/v1/api/inverter/shelfTime"
+	},
+	"alarm": {
+		"1": "/v1/api/alarmList"
+	},
+	"collector": {
+		"1": "/v1/api/collectorList",
+		"2": "/v1/api/collectorDetail",
+		"3": "/v1/api/collector/day"
+	},
+	"emp": {
+		"1": "/v1/api/epmList",
+		"2": "/v1/api/epmDetail",
+		"3": "/v1/api/epm/day",
+		"4": "/v1/api/epm/month",
+		"5": "/v1/api/epm/year",
+		"6": "/v1/api/epm/all"
+	},
+	"weather": {
+		"1": "/v1/api/weatherList"
+	},
+	"station": {
+		"1": "/v1/api/userStationList",
+		"2": "/v1/api/stationDetail",
+		"3": "/v1/api/stationDetailList",
+		"4": "/v1/api/stationDayEnergyList",
+		"5": "/v1/api/stationMonthEnergyList",
+		"6": "/v1/api/stationYearEnergyList",
+		"7": "/v1/api/stationDay",
+		"8": "/v1/api/stationMonth",
+		"9": "/v1/api/stationYear",
+		"10": "/v1/api/stationAll",
+		"11": "/v1/api/addStation",
+		"12": "/v1/api/stationUpdate",
+		"13": "/v1/api/addStationBindCollector",
+		"14": "/v1/api/delCollector",
+		"15": "/v1/api/addDevice"
+	}
+}

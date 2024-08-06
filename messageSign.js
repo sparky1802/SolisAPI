@@ -1,9 +1,9 @@
-import { crypto } from "@std/crypto"
-import { encodeBase64 } from "@std/encoding/base64"
+import { crypto } from '@std/crypto';
+import { encodeBase64 } from '@std/encoding/base64';
 
 export { authMessage, digestMessage, keySign, messageToSign };
 
-const utf8Encoder = new TextEncoder('utf-8');
+const UTF8_ENCODER = new TextEncoder('utf-8');
 
 //Sign the "MESSAGE" using the key "keySign"
 async function authMessage(SIGN_ALGORITHM, SIGN_KEY, MESSAGE) {
@@ -18,7 +18,7 @@ async function authMessage(SIGN_ALGORITHM, SIGN_KEY, MESSAGE) {
 
 //Hash "CONTENT" with MD5 and convert to base64
 async function digestMessage(CONTENT_HASH, CONTENT) {
-	let resCont = utf8Encoder.encode(CONTENT);
+	let resCont = UTF8_ENCODER.encode(CONTENT);
 	resCont = await crypto.subtle.digest(CONTENT_HASH, resCont);
 	resCont = encodeBase64(resCont, 'base64');
 	return resCont;
@@ -26,7 +26,7 @@ async function digestMessage(CONTENT_HASH, CONTENT) {
 
 //Create a key "keySign" used to sign "MESSAGE"
 async function keySign(KEY_SECRET, SIGN_FORMAT, SIGN_ALGORITHM, SIGN_HASH) {
-	KEY_SECRET = utf8Encoder.encode(KEY_SECRET);
+	KEY_SECRET = UTF8_ENCODER.encode(KEY_SECRET);
 	const resKeySec = await crypto.subtle.importKey(
 		SIGN_FORMAT,
 		KEY_SECRET,
@@ -50,6 +50,6 @@ function messageToSign(
 		CONTENT_TYPE + '\n' +
 		GMT_DATE + '\n' +
 		canonicalizedResources;
-	resMessage = utf8Encoder.encode(resMessage);
+	resMessage = UTF8_ENCODER.encode(resMessage);
 	return resMessage;
 }
