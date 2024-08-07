@@ -5,99 +5,62 @@ function csvToJson() {
 	const CON_ROWS = CONSUME.split('\n');
 	const GEN_ROWS = GENERATE.split('\n');
 	const DIFF = Number(CON_ROWS.length) - Number(GEN_ROWS.length);
-	const CON_DATE_SYNC = CON_ROWS[DIFF + 1].split(',')[0];
-	const GEN_DATE_SYNC = GEN_ROWS[1].split(',')[0];
 	const CON_HEADER = CON_ROWS[0].split(',');
-	const GEN_HEADER = GEN_ROWS[0].split(',');
 	const JSON_DATA = [];
 	const DATA = []
-	let utcTime
-	let utcEpocTime
-	let localTime
-	let key
-	let conVal
-	let genVal
-
 
 	for (let iVal1 = 1; iVal1 < CON_ROWS.length - 1; iVal1++) {
 		const CON_VAL = CON_ROWS[iVal1].split(',');
+		let utcDetails
+		let addTime
 		for (let iVal2 = 0; iVal2 < CON_HEADER.length; iVal2++) {
+			let conVal
+			let genVal
 			if (iVal2 === 0) {
-				let getDate = CON_ROWS[iVal1].split(',')[0]
-				let getYYYY = getDate.substring(getDate.indexOf('/',getDate.indexOf('/')+1)+1,getDate.length)
-				let getMM = getDate.substring(getDate.indexOf('/')+1,getDate.indexOf('/',getDate.indexOf('/')+1))
-				let getDD = getDate.substring(0,getDate.indexOf('/'))
-				let getMyDate = new Date(`${getYYYY}-${getMM}-${getDD}`)
-				utcTime = new Date(getMyDate.setHours(0,0,0,0))
-				utcEpocTime = Number(utcTime)
-				let YYYY = utcTime.getFullYear()
-				let MM = (utcTime.getMonth()+1).toString().padStart(2,'0')
-				let DD = utcTime.getDate().toString().padStart(2,'0')
-				let hh = utcTime.getHours().toString().padStart(2,'0')
-				let mm = utcTime.getMinutes().toString().padStart(2,'0')
-				let ss = utcTime.getSeconds().toString().padStart(2,'0')
-				let ms = utcTime.getMilliseconds().toString().padStart(3,'0')
-				let tzh = Math.floor(utcTime.getTimezoneOffset() / 60)
-				let tzm
-					switch (true) {
-					case tzh < 0:
-						tzh = `+${(Math.ceil(utcTime.getTimezoneOffset() / 60)  * -1).toString().padStart(2,'0')}`
-						tzm =((utcTime.getTimezoneOffset() / 60 - Math.ceil(utcTime.getTimezoneOffset() / 60)) * -60).toString().padStart(2,'0')
-					break;
-					case tzh > 0:
-						tzh = `-${(Math.floor(utcTime.getTimezoneOffset() / 60)  * -1).toString().padStart(2,'0')}`
-						tzm =((utcTime.getTimezoneOffset() / 60 - Math.floor(utcTime.getTimezoneOffset() / 60)) * -60).toString().padStart(2,'0')
-					break;
-					default:
-						tzh = '+00'
-						tzm = '00'
+				addTime = 0
+				utcDetails = timeDetails(CON_ROWS[iVal1].split(',')[0])
+			}else{
+				if (iVal1 <= DIFF) {
+					conVal = CON_VAL[iVal2].trim();
+					genVal = '0'
+					if (conVal === '') {
+						conVal = '0';
+					}
+				} else {
+					const GEN_VAL = GEN_ROWS[iVal1 - DIFF].split(',');
+					conVal = CON_VAL[iVal2].trim();
+					if (conVal === '') {
+						conVal = '0';
+					}
+					genVal = GEN_VAL[iVal2].trim();
 				}
-				localTime = `${YYYY}-${MM}-${DD}T${hh}:${mm}:${ss}.${ms}${tzh}:${tzm}`
+				const NEW_DATE = new Date (utcDetails)
+				const NEW_TIME = new Date (NEW_DATE.getTime() + addTime++ * 5 * 60 *1000)
+				
+				const OBJECT = {
+					utcDateTime:NEW_TIME,
+					utcTimeStamp:Number(NEW_TIME),
+					localDateTime:NEW_TIME.toLocaleString(),
+					powerCunsume:conVal,
+					powerProduce:genVal
+				};
+				DATA.push(OBJECT);
 			}
-			
-			//--
-			if (iVal1 <= DIFF) {
-				key = CON_HEADER[iVal2].trim();
-				conVal = CON_VAL[iVal2].trim();
-				if (conVal === '') {
-					conVal = '0';
-				}
-				genVal = '0';
-//				OBJECT[key] = [{ consume: conVal }, { feedIn: genVal }];
-			} else {
-				const GEN_VAL = GEN_ROWS[iVal1 - DIFF].split(',');
-				key = CON_HEADER[iVal2].trim();
-				conVal = CON_VAL[iVal2].trim();
-				if (conVal === '') {
-					conVal = '0';
-				}
-				genVal = GEN_VAL[iVal2].trim();
-//				OBJECT[key] = [{ consume: conVal }, { feedIn: genVal }];
-			}
-//			console.log(key, conVal, genVal)
-			const OBJECT = {
-				utcDateTime:utcTime,
-				utcTimeStamp:utcEpocTime,
-				localDateTime:localTime,
-				powerCunsume:conVal,
-				powerProduce:genVal
-			};
-			DATA.push(OBJECT);
-
-			//--
-
-			//            const key = CON_HEADER[iVal2].trim();
-			//            const VALUE = CON_VAL[iVal2].trim();
-			//            OBJECT[key] = VALUE;
 		}
-//		DATA.push(OBJECT);
 	}
-
 	JSON_DATA.push({data:DATA});
 	return JSON_DATA
 }
 
+function timeDetails(DATE) {
+	const GET_DATE = DATE
+	const GET_YYYY = GET_DATE.substring(GET_DATE.indexOf('/',GET_DATE.indexOf('/')+1)+1,GET_DATE.length)
+	const GET_MM = GET_DATE.substring(GET_DATE.indexOf('/')+1,GET_DATE.indexOf('/',GET_DATE.indexOf('/')+1))
+	const GET_DD = GET_DATE.substring(0,GET_DATE.indexOf('/'))
+	const GET_MY_DATE = new Date(`${GET_YYYY}-${GET_MM}-${GET_DD}`)
+	const UTC_TIME = new Date(GET_MY_DATE.setHours(0,0,0,0))
+	return UTC_TIME.toISOString()
+}
+
 const RESULT = await csvToJson();
-//console.log(Object.keys(RESULT).length)
-//console.log(RESULT[782])
 Deno.writeTextFile('./cache/powerInfo.json', JSON.stringify(RESULT));
